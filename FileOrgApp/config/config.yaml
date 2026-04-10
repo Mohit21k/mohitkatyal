@@ -1,0 +1,21 @@
+watcher:
+  folders:
+    - "~/Downloads"
+    # - "~/Documents/Unsorted" # Add other folders to monitor here
+
+categories:
+  Bank: "~/Documents/Bank"
+  Property: "~/Documents/Property"
+  Education: "~/Documents/Education"
+  Bills: "~/Documents/Bills"
+  Personal: "~/Documents/Personal"
+  Misc: "~/Documents/Misc"
+
+classifier:
+  provider: "ollama"
+  ollama_url: "http://localhost:11434/api/generate"
+  # Common locally run models: llama3, mistral, or phi3
+  model: "llama3" 
+  
+system:
+  log_db_path: "history.db"
