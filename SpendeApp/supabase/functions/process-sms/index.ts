@@ -25,6 +25,27 @@ serve(async (req) => {
   try {
     const { smsBody, userId } = await req.json()
 
+    if (!smsBody || !smsBody.trim()) {
+      throw new Error('smsBody is empty or missing')
+    }
+
+    // Check for duplicate raw_sms in the last 5 minutes to prevent double captures from iOS Shortcuts
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+    const { data: existingExpenses, error: checkError } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('raw_sms', smsBody.trim())
+      .gte('created_at', fiveMinutesAgo)
+
+    if (checkError) throw checkError
+
+    if (existingExpenses && existingExpenses.length > 0) {
+      console.log('Duplicate SMS detected within 5 minutes, skipping insertion.')
+      return new Response(JSON.stringify(existingExpenses[0]), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     // Call OpenAI to parse the SMS
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
