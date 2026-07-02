@@ -276,47 +276,51 @@ export default function DashboardScreen() {
     }
   };
 
+  const totalBoth = mohitTotal + ankitaTotal;
+  const mohitPct = totalBoth > 0 ? (mohitTotal / totalBoth) * 100 : 50;
+  const ankitaPct = totalBoth > 0 ? (ankitaTotal / totalBoth) * 100 : 50;
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header} lightColor="transparent" darkColor="transparent">
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'transparent' }}>
           <Text style={styles.title}>Spende <Text style={styles.titleHighlight}>Together</Text></Text>
-          <View style={[styles.statusBadge, { backgroundColor: syncStatus === 'synced' ? 'rgba(50, 215, 75, 0.15)' : 'rgba(255, 159, 10, 0.15)' }]}>
-            <View style={[styles.statusDot, { backgroundColor: syncStatus === 'synced' ? '#32d74b' : '#ff9f0a' }]} />
-            <Text style={[styles.statusText, { color: syncStatus === 'synced' ? '#32d74b' : '#ff9f0a' }]}>
+          <View style={[styles.statusBadge, { backgroundColor: syncStatus === 'synced' ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 149, 0, 0.15)' }]}>
+            <View style={[styles.statusDot, { backgroundColor: syncStatus === 'synced' ? '#34c759' : '#ff9500' }]} />
+            <Text style={[styles.statusText, { color: syncStatus === 'synced' ? '#34c759' : '#ff9500' }]}>
               {syncStatus === 'synced' ? 'Synced' : 'Offline'}
             </Text>
           </View>
         </View>
         
-        <View style={styles.monthSelector} lightColor="transparent" darkColor="transparent">
+        <View style={styles.monthSelector}>
           <TouchableOpacity onPress={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
-            <Ionicons name="chevron-back" size={24} color={Colors[colorScheme].text} />
+            <Ionicons name="chevron-back" size={20} color={Colors[colorScheme].text} />
           </TouchableOpacity>
           <Text style={styles.subtitle}>
             {currentDate.toLocaleDateString('default', { month: 'long', year: 'numeric' })}
           </Text>
           <TouchableOpacity onPress={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
-            <Ionicons name="chevron-forward" size={24} color={Colors[colorScheme].text} />
+            <Ionicons name="chevron-forward" size={20} color={Colors[colorScheme].text} />
           </TouchableOpacity>
         </View>
       </View>
 
       {hasPrevPending && (
-        <View style={styles.alertBanner} lightColor="#ffeaea" darkColor="#401010">
-          <Ionicons name="warning" size={18} color="#ff453a" />
+        <View style={styles.alertBanner} lightColor="#fff9e6" darkColor="#2c1e00">
+          <Ionicons name="warning" size={18} color="#ff9500" />
           <Text style={styles.alertText}>
             You have unapproved expenses from previous months! Review in Inbox.
           </Text>
         </View>
       )}
 
-      <View style={styles.summaryCard} lightColor="#fff" darkColor="#1a1a1a">
+      <View style={styles.summaryCard} lightColor="#ffffff" darkColor="#16171d">
         <Text style={styles.cardLabel}>Combined Balance</Text>
         <Text style={styles.totalAmount}>₹{total.toFixed(2)}</Text>
         <Text style={styles.savedAmount}>Syncing live from Supabase</Text>
         
-        <View style={styles.divider} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
+        <View style={styles.divider} lightColor="rgba(0,0,0,0.05)" darkColor="rgba(255,255,255,0.05)" />
         
         <View style={styles.userBreakdown}>
           <View style={styles.userColumn}>
@@ -332,12 +336,23 @@ export default function DashboardScreen() {
             <Text style={styles.userTotal}>Total: ₹{ankitaTotal.toFixed(2)}</Text>
           </View>
         </View>
+
+        <View style={styles.ratioBarContainer}>
+          <View style={styles.ratioBarLabels}>
+            <Text style={[styles.ratioLabel, { color: '#ff9f0a' }]}>Mohit: {mohitPct.toFixed(0)}%</Text>
+            <Text style={[styles.ratioLabel, { color: '#0a84ff' }]}>Ankita: {ankitaPct.toFixed(0)}%</Text>
+          </View>
+          <View style={styles.ratioBarBackground} lightColor="#e0e0e0" darkColor="#2c2c2e">
+            <View style={[styles.mohitRatioFill, { width: `${mohitPct}%` }]} />
+            <View style={[styles.ankitaRatioFill, { width: `${ankitaPct}%` }]} />
+          </View>
+        </View>
       </View>
 
       {monthPending.length > 0 && (
         <View style={styles.pendingSection} lightColor="transparent" darkColor="transparent">
           <Text style={styles.pendingSectionTitle}>Pending Approval ({currentDate.toLocaleDateString([], {month: 'long'})})</Text>
-          <View style={styles.pendingCardWrapper} lightColor="#fff" darkColor="#1a1a1a">
+          <View style={styles.pendingCardWrapper} lightColor="#ffffff" darkColor="#16171d">
             {monthPending.map((item, index) => (
               <React.Fragment key={item.id}>
                 {index !== 0 && <View style={styles.transactionDivider} lightColor="#eee" darkColor="rgba(255,255,255,0.05)" />}
@@ -407,7 +422,7 @@ export default function DashboardScreen() {
           </View>
 
           {/* Transactions List for this Category */}
-          <View style={styles.listWrapper} lightColor="#fff" darkColor="#1a1a1a">
+          <View style={styles.listWrapper} lightColor="#ffffff" darkColor="#16171d">
             {group.transactions.map((item, index) => (
               <React.Fragment key={item.id}>
                 {index !== 0 && <View style={styles.transactionDivider} lightColor="#eee" darkColor="rgba(255,255,255,0.05)" />}
@@ -505,15 +520,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
+    paddingTop: 12,
   },
   header: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 24,
+    marginTop: 16,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   titleHighlight: {
     color: '#ff9f0a',
@@ -521,51 +538,60 @@ const styles = StyleSheet.create({
   monthSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 12,
     gap: 16,
+    backgroundColor: 'rgba(150, 150, 150, 0.08)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(150, 150, 150, 0.05)',
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#888',
   },
   summaryCard: {
     borderRadius: 24,
     padding: 24,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-    marginBottom: 32,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+    marginBottom: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(150, 150, 150, 0.08)',
   },
   cardLabel: {
-    fontSize: 16,
-    color: '#888',
-    marginBottom: 8,
+    fontSize: 14,
+    color: '#8e8e93',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
   },
   totalAmount: {
-    fontSize: 42,
+    fontSize: 38,
     fontWeight: '800',
-    marginBottom: 8,
+    marginBottom: 4,
+    letterSpacing: -1,
   },
   savedAmount: {
-    fontSize: 14,
-    color: '#888',
+    fontSize: 13,
+    color: '#8e8e93',
   },
   divider: {
     height: 1,
     width: '100%',
-    marginVertical: 20,
+    marginVertical: 18,
   },
   userBreakdown: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     backgroundColor: 'transparent',
   },
   userColumn: {
@@ -573,42 +599,73 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   userBadge: {
-    borderWidth: 2,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 8,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 16,
+    marginBottom: 6,
   },
   userName: {
-    fontWeight: '600',
-    fontSize: 16,
+    fontWeight: '700',
+    fontSize: 14,
   },
   userTotal: {
     fontSize: 14,
-    color: '#888',
+    fontWeight: '600',
+  },
+  ratioBarContainer: {
+    width: '100%',
+    marginTop: 18,
+    backgroundColor: 'transparent',
+  },
+  ratioBarLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+    backgroundColor: 'transparent',
+  },
+  ratioLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  ratioBarBackground: {
+    height: 8,
+    borderRadius: 4,
+    width: '100%',
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  mohitRatioFill: {
+    height: '100%',
+    backgroundColor: '#ff9f0a',
+  },
+  ankitaRatioFill: {
+    height: '100%',
+    backgroundColor: '#0a84ff',
   },
   listSection: {
-    marginBottom: 40,
+    marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
   },
   categorySubTitle: {
-    fontSize: 13,
+    fontSize: 12,
+    color: '#8e8e93',
     marginTop: 4,
   },
   categoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-    marginLeft: 8,
-    marginRight: 8,
+    marginBottom: 12,
+    paddingHorizontal: 8,
+    backgroundColor: 'transparent',
   },
   categoryTotal: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '700',
   },
   transactionDivider: {
     height: 1,
@@ -617,7 +674,9 @@ const styles = StyleSheet.create({
   listWrapper: {
     borderRadius: 20,
     overflow: 'hidden',
-    paddingVertical: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(150, 150, 150, 0.08)',
   },
   transactionRow: {
     flexDirection: 'row',
@@ -633,69 +692,70 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   avatarCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 15,
   },
   transactionMerchant: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: 2,
   },
   transactionCategory: {
-    fontSize: 13,
-    color: '#888',
+    fontSize: 12,
+    color: '#8e8e93',
   },
   transactionRight: {
     alignItems: 'flex-end',
     backgroundColor: 'transparent',
   },
   transactionAmount: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 2,
   },
   transactionDate: {
-    fontSize: 13,
-    color: '#888',
+    fontSize: 12,
+    color: '#8e8e93',
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     padding: 24,
     paddingBottom: 40,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 20,
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 24,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   modalCatBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: 'rgba(150,150,150,0.1)',
-    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    backgroundColor: 'rgba(150,150,150,0.08)',
+    borderWidth: 1.5,
     borderColor: 'transparent',
   },
   modalCatBtnActive: {
@@ -703,8 +763,9 @@ const styles = StyleSheet.create({
     borderColor: '#0a84ff',
   },
   modalCatText: {
-    color: '#888',
+    color: '#8e8e93',
     fontWeight: '600',
+    fontSize: 13,
   },
   modalCatTextActive: {
     color: '#0a84ff',
@@ -712,10 +773,10 @@ const styles = StyleSheet.create({
   modalUserBtn: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: 'rgba(150,150,150,0.1)',
+    borderRadius: 12,
+    backgroundColor: 'rgba(150,150,150,0.08)',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: 'transparent',
   },
   modalUserBtnActive: {
@@ -723,18 +784,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(10, 132, 255, 0.1)',
   },
   modalUserText: {
-    color: '#888',
+    color: '#8e8e93',
     fontWeight: '600',
   },
   modalUserTextActive: {
     color: '#0a84ff',
   },
   modalSaveBtn: {
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 16,
     backgroundColor: '#0a84ff',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 24,
   },
   modalSaveBtnText: {
     color: '#fff',
@@ -761,43 +822,46 @@ const styles = StyleSheet.create({
   alertBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
-    gap: 8,
+    padding: 14,
+    borderRadius: 16,
+    marginBottom: 20,
+    gap: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 69, 58, 0.2)',
   },
   alertText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#ff453a',
     flex: 1,
   },
   pendingSection: {
-    marginBottom: 24,
+    marginBottom: 28,
   },
   pendingSectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#ff9f0a',
-    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
+    marginLeft: 8,
   },
   pendingCardWrapper: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(150,150,150,0.08)',
   },
   pendingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
   },
   pendingLeft: {
     flex: 1,
@@ -826,16 +890,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   commentText: {
-    fontSize: 12,
-    color: '#888',
+    fontSize: 13,
+    color: '#8e8e93',
     fontStyle: 'italic',
     marginTop: 4,
   },
   modalCommentInput: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontSize: 14,
     marginBottom: 20,
     backgroundColor: 'rgba(150,150,150,0.05)',

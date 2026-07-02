@@ -180,7 +180,7 @@ export default function InsightsScreen() {
   return (
     <ScrollView style={styles.container}>
       {/* Monthly Trend Header */}
-      <View style={styles.headerCard} lightColor="#fff" darkColor="#1a1a1a">
+      <View style={styles.headerCard} lightColor="#ffffff" darkColor="#16171d">
         <Text style={styles.cardLabel}>This Month's Trend</Text>
         <Text style={styles.totalAmount}>₹{thisMonthTotal.toFixed(2)}</Text>
         <Text style={[styles.trendText, { color: lastMonthTotal > 0 ? (isUp ? '#ff453a' : '#32d74b') : '#888' }]}>
@@ -191,7 +191,7 @@ export default function InsightsScreen() {
       {/* Top Categories */}
       <View style={styles.section} lightColor="transparent" darkColor="transparent">
         <Text style={styles.sectionTitle}>Top Spending Categories</Text>
-        <View style={styles.card} lightColor="#fff" darkColor="#1a1a1a">
+        <View style={styles.card} lightColor="#ffffff" darkColor="#16171d">
           {categories.length === 0 ? (
              <Text style={styles.emptyText}>No spending this month.</Text>
           ) : categories.map((cat, index) => (
@@ -211,7 +211,7 @@ export default function InsightsScreen() {
       {/* Spender Breakdown (This Month) */}
       <View style={styles.section} lightColor="transparent" darkColor="transparent">
         <Text style={styles.sectionTitle}>Who Spent More? (This Month)</Text>
-        <View style={styles.card} lightColor="#fff" darkColor="#1a1a1a">
+        <View style={styles.card} lightColor="#ffffff" darkColor="#16171d">
           
           <View style={styles.spenderHeader} lightColor="transparent" darkColor="transparent">
             <View lightColor="transparent" darkColor="transparent">
@@ -234,7 +234,7 @@ export default function InsightsScreen() {
       {/* Cumulative Breakdown (All Time) */}
       <View style={[styles.section, {marginBottom: 24}]} lightColor="transparent" darkColor="transparent">
         <Text style={styles.sectionTitle}>Cumulative Breakdown (All Time)</Text>
-        <View style={styles.card} lightColor="#fff" darkColor="#1a1a1a">
+        <View style={styles.card} lightColor="#ffffff" darkColor="#16171d">
           
           <Text style={styles.cardLabel}>Total Combined Spent: ₹{allTimeTotal.toFixed(2)}</Text>
           <View style={styles.spenderHeader} lightColor="transparent" darkColor="transparent">
@@ -259,7 +259,7 @@ export default function InsightsScreen() {
       {monthlyHistory.length > 0 && (
         <View style={[styles.section, {marginBottom: 60}]} lightColor="transparent" darkColor="transparent">
           <Text style={styles.sectionTitle}>Past Months History</Text>
-          <View style={styles.historyCard} lightColor="#fff" darkColor="#1a1a1a">
+          <View style={styles.historyCard} lightColor="#ffffff" darkColor="#16171d">
             {monthlyHistory.map((item, index) => {
               const isExpanded = !!expandedMonths[item.monthKey];
               const monthCats = Object.entries(item.categories)
@@ -317,101 +317,110 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 12,
   },
   headerCard: {
     borderRadius: 24,
     padding: 24,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-    marginBottom: 24,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+    marginBottom: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(150, 150, 150, 0.08)',
   },
   cardLabel: {
-    fontSize: 16,
-    color: '#888',
-    marginBottom: 8,
+    fontSize: 14,
+    color: '#8e8e93',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
   },
   totalAmount: {
-    fontSize: 42,
+    fontSize: 38,
     fontWeight: '800',
-    marginBottom: 8,
+    marginBottom: 4,
+    letterSpacing: -1,
   },
   trendText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     marginBottom: 12,
     marginLeft: 8,
   },
   card: {
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(150, 150, 150, 0.08)',
   },
   emptyText: {
-    color: '#888',
+    color: '#8e8e93',
     textAlign: 'center',
+    fontSize: 14,
+    paddingVertical: 12,
   },
   categoryRow: {
     width: '100%',
+    marginBottom: 14,
   },
   categoryInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   categoryName: {
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: 14,
   },
   categoryValue: {
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 14,
   },
   barBackground: {
-    height: 12,
-    borderRadius: 6,
+    height: 8,
+    borderRadius: 4,
     width: '100%',
     overflow: 'hidden',
   },
   barFill: {
     height: '100%',
-    borderRadius: 6,
+    borderRadius: 4,
   },
   spenderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
     marginTop: 8,
   },
   spenderName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 4,
   },
   spenderAmount: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
   },
   versusBar: {
-    height: 16,
-    borderRadius: 8,
+    height: 10,
+    borderRadius: 5,
     width: '100%',
     flexDirection: 'row',
     overflow: 'hidden',
@@ -425,20 +434,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#0a84ff',
   },
   historyCard: {
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    gap: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(150, 150, 150, 0.08)',
+    gap: 8,
   },
   historyRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
   },
   historyRowLeft: {
     backgroundColor: 'transparent',
@@ -450,34 +462,37 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   historyMonthName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   historyMonthSplit: {
     fontSize: 12,
-    color: '#888',
+    color: '#8e8e93',
     marginTop: 4,
   },
   historyMonthAmount: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
   },
   historyDivider: {
     height: 1,
-    backgroundColor: 'rgba(150,150,150,0.1)',
+    backgroundColor: 'rgba(150,150,150,0.05)',
   },
   historyDetails: {
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 16,
     marginTop: 4,
+    marginBottom: 8,
     backgroundColor: 'rgba(150,150,150,0.03)',
     gap: 12,
   },
   historyDetailsTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#888',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#8e8e93',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 4,
   },
   historyCategoryRow: {
@@ -487,7 +502,7 @@ const styles = StyleSheet.create({
   historyCategoryInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 6,
     backgroundColor: 'transparent',
   },
   historyCategoryName: {
