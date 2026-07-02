@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -278,10 +278,10 @@ export default function InsightsScreen() {
                     </View>
                     <View style={styles.historyRowRight} lightColor="transparent" darkColor="transparent">
                       <Text style={styles.historyMonthAmount}>₹{item.total.toFixed(2)}</Text>
-                      <SymbolView 
-                        name={isExpanded ? "chevron.up" : "chevron.down"} 
+                      <Ionicons 
+                        name={isExpanded ? "chevron-up" : "chevron-down"} 
                         size={16} 
-                        tintColor="#888" 
+                        color="#888" 
                       />
                     </View>
                   </TouchableOpacity>

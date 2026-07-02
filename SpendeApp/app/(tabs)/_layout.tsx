@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { Link, Tabs } from 'expo-router';
 import { Platform, Pressable, View } from 'react-native';
 
@@ -22,25 +22,17 @@ export default function TabLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'chart.pie.fill',
-                android: 'bar-chart',
-                web: 'bar-chart',
-              }}
-              tintColor={color}
-              size={28}
-            />
+            <Ionicons name="pie-chart" size={24} color={color} />
           ),
           headerRight: () => (
             <View style={{ flexDirection: 'row', backgroundColor: 'transparent' }}>
               <Link href="/search" asChild>
                 <Pressable style={{ marginRight: 15 }}>
                   {({ pressed }) => (
-                    <SymbolView
-                      name="magnifyingglass"
-                      size={25}
-                      tintColor={Colors[colorScheme].text}
+                    <Ionicons
+                      name="search"
+                      size={24}
+                      color={Colors[colorScheme].text}
                       style={{ opacity: pressed ? 0.5 : 1 }}
                     />
                   )}
@@ -49,10 +41,10 @@ export default function TabLayout() {
               <Link href="/budgets" asChild>
                 <Pressable style={{ marginRight: 15 }}>
                   {({ pressed }) => (
-                    <SymbolView
-                      name="target"
-                      size={25}
-                      tintColor={Colors[colorScheme].text}
+                    <Ionicons
+                      name="construct"
+                      size={24}
+                      color={Colors[colorScheme].text}
                       style={{ opacity: pressed ? 0.5 : 1 }}
                     />
                   )}
@@ -67,15 +59,7 @@ export default function TabLayout() {
         options={{
           title: 'Inbox',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'tray.fill',
-                android: 'inbox',
-                web: 'inbox',
-              }}
-              tintColor={color}
-              size={28}
-            />
+            <Ionicons name="mail" size={24} color={color} />
           ),
         }}
       />
@@ -84,15 +68,7 @@ export default function TabLayout() {
         options={{
           title: 'Insights',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'chart.pie.fill',
-                android: 'pie-chart',
-                web: 'pie-chart',
-              }}
-              tintColor={color}
-              size={28}
-            />
+            <Ionicons name="analytics" size={24} color={color} />
           ),
         }}
       />

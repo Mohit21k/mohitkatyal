@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, FlatList, TouchableOpacity, ScrollView, Alert, TextInput, ActivityIndicator } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -79,14 +79,14 @@ function ExpenseCard({ item, onApprove, onDiscard }: { item: PendingExpense, onA
         <TouchableOpacity 
           style={[styles.actionBtn, styles.discardBtn]} 
           onPress={() => onDiscard(item.id)}>
-          <SymbolView name="xmark" tintColor="#ff453a" size={20} />
+          <Ionicons name="close" color="#ff453a" size={20} />
           <Text style={[styles.actionText, { color: '#ff453a' }]}>Discard</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={[styles.actionBtn, styles.approveBtn]} 
           onPress={() => onApprove(item.id, selectedCategory, commentText)}>
-          <SymbolView name="checkmark" tintColor="#32d74b" size={20} />
+          <Ionicons name="checkmark" color="#32d74b" size={20} />
           <Text style={[styles.actionText, { color: '#32d74b' }]}>Approve</Text>
         </TouchableOpacity>
       </View>
@@ -297,13 +297,13 @@ export default function InboxScreen() {
           onPress={() => setIsExpanded(!isExpanded)}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'transparent' }}>
-            <SymbolView name="doc.text.fill" size={18} tintColor={Colors[colorScheme].tint} />
+            <Ionicons name="document-text" size={18} color={Colors[colorScheme].tint} />
             <Text style={styles.smsTitle}>Paste Missed Bank SMS</Text>
           </View>
-          <SymbolView 
-            name={isExpanded ? "chevron.up" : "chevron.down"} 
+          <Ionicons 
+            name={isExpanded ? "chevron-up" : "chevron-down"} 
             size={16} 
-            tintColor="#888" 
+            color="#888" 
           />
         </TouchableOpacity>
 
@@ -357,7 +357,7 @@ export default function InboxScreen() {
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <>
-                  <SymbolView name="wand.and.stars" size={16} tintColor="#fff" />
+                  <Ionicons name="sparkles" size={16} color="#fff" />
                   <Text style={styles.parseBtnText}>AI Parse SMS</Text>
                 </>
               )}
@@ -368,7 +368,7 @@ export default function InboxScreen() {
 
       {displayedExpenses.length === 0 ? (
         <View style={styles.emptyState} lightColor="transparent" darkColor="transparent">
-          <SymbolView name="tray" tintColor={Colors[colorScheme].text} size={48} />
+          <Ionicons name="tray" color={Colors[colorScheme].text} size={48} />
           <Text style={styles.emptyStateText}>No pending expenses for {filterMode}!</Text>
         </View>
       ) : (
@@ -381,7 +381,7 @@ export default function InboxScreen() {
       )}
       
       <TouchableOpacity style={styles.fab} onPress={pickImage}>
-        <SymbolView name="camera.fill" size={24} tintColor="#fff" />
+        <Ionicons name="camera" size={24} color="#fff" />
       </TouchableOpacity>
     </View>
   );

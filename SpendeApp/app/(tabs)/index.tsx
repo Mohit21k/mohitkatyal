@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, FlatList, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Text, View } from '@/components/Themed';
@@ -291,20 +291,20 @@ export default function DashboardScreen() {
         
         <View style={styles.monthSelector} lightColor="transparent" darkColor="transparent">
           <TouchableOpacity onPress={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
-            <SymbolView name="chevron.left" size={20} tintColor={Colors[colorScheme].text} />
+            <Ionicons name="chevron-back" size={24} color={Colors[colorScheme].text} />
           </TouchableOpacity>
           <Text style={styles.subtitle}>
             {currentDate.toLocaleDateString('default', { month: 'long', year: 'numeric' })}
           </Text>
           <TouchableOpacity onPress={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
-            <SymbolView name="chevron.right" size={20} tintColor={Colors[colorScheme].text} />
+            <Ionicons name="chevron-forward" size={24} color={Colors[colorScheme].text} />
           </TouchableOpacity>
         </View>
       </View>
 
       {hasPrevPending && (
         <View style={styles.alertBanner} lightColor="#ffeaea" darkColor="#401010">
-          <SymbolView name="exclamationmark.triangle.fill" size={18} tintColor="#ff453a" />
+          <Ionicons name="warning" size={18} color="#ff453a" />
           <Text style={styles.alertText}>
             You have unapproved expenses from previous months! Review in Inbox.
           </Text>
@@ -356,7 +356,7 @@ export default function DashboardScreen() {
                         style={styles.pendingApproveBtn}
                         onPress={() => handleQuickApprove(item.id, item.category)}
                       >
-                        <SymbolView name="checkmark.circle.fill" size={24} tintColor="#32d74b" />
+                        <Ionicons name="checkmark-circle" size={28} color="#32d74b" />
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={styles.pendingEditBtn}
@@ -367,7 +367,7 @@ export default function DashboardScreen() {
                           setCommentText(item.comment || '');
                         }}
                       >
-                        <SymbolView name="pencil.circle.fill" size={24} tintColor="#0a84ff" />
+                        <Ionicons name="create" size={28} color="#0a84ff" />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -430,7 +430,7 @@ export default function DashboardScreen() {
             <View style={styles.modalHeader} lightColor="transparent" darkColor="transparent">
               <Text style={styles.modalTitle}>Edit Expense</Text>
               <TouchableOpacity onPress={() => setEditingTransaction(null)}>
-                <SymbolView name="xmark.circle.fill" size={24} tintColor="#888" />
+                <Ionicons name="close-circle" size={28} color="#888" />
               </TouchableOpacity>
             </View>
             

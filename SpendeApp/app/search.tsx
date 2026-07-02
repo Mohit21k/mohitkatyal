@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, TextInput, FlatList, TouchableOpacity, Modal } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { supabase } from '@/lib/supabase';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -80,7 +80,7 @@ export default function SearchScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.searchBarContainer} lightColor="rgba(0,0,0,0.05)" darkColor="rgba(255,255,255,0.1)">
-        <SymbolView name="magnifyingglass" tintColor="#888" size={20} />
+        <Ionicons name="search" color="#888" size={20} />
         <TextInput
           style={[styles.searchInput, { color: Colors[colorScheme].text }]}
           placeholder="Search merchants or categories..."
@@ -114,7 +114,7 @@ export default function SearchScreen() {
             <View style={styles.modalHeader} lightColor="transparent" darkColor="transparent">
               <Text style={styles.modalTitle}>Edit Expense</Text>
               <TouchableOpacity onPress={() => setEditingTransaction(null)}>
-                <SymbolView name="xmark.circle.fill" size={24} tintColor="#888" />
+                <Ionicons name="close-circle" size={28} color="#888" />
               </TouchableOpacity>
             </View>
             
