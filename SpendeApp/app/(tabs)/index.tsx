@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, FlatList, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { StyleSheet, FlatList, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -15,6 +15,8 @@ type Transaction = {
   amount: number;
   date: string;
   user: 'Mohit' | 'Ankita';
+  comment?: string;
+  status?: 'pending' | 'approved' | 'discarded';
 };
 
 const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Misc'];
@@ -47,6 +49,9 @@ export default function DashboardScreen() {
   const [selectedCat, setSelectedCat] = useState<string>('');
   const [selectedUser, setSelectedUser] = useState<'Mohit' | 'Ankita'>('Mohit');
   const [syncStatus, setSyncStatus] = useState<'synced' | 'offline'>('synced');
+  const [commentText, setCommentText] = useState('');
+  const [hasPrevPending, setHasPrevPending] = useState(false);
+  const [monthPending, setMonthPending] = useState<Transaction[]>([]);
   
   const colorScheme = useColorScheme() ?? 'dark';
 
@@ -76,11 +81,28 @@ export default function DashboardScreen() {
     let mTotal = 0;
     let aTotal = 0;
     const catMap: Record<string, GroupedCategory> = {};
+    const pendingList: Transaction[] = [];
 
     data.forEach(d => {
+      const user = d.user_id === 'mohit' ? 'Mohit' : 'Ankita';
+      const formattedDate = new Date(d.created_at).toLocaleDateString([], {month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'});
+      
+      if (d.status === 'pending') {
+        pendingList.push({
+          id: d.id,
+          merchant: d.merchant,
+          category: d.category,
+          amount: Number(d.amount),
+          date: formattedDate,
+          user: user,
+          comment: d.comment,
+          status: d.status
+        });
+        return;
+      }
+
       const amount = Number(d.amount);
       sum += amount;
-      const user = d.user_id === 'mohit' ? 'Mohit' : 'Ankita';
       
       if (user === 'Mohit') {
         mTotal += amount;
@@ -103,14 +125,17 @@ export default function DashboardScreen() {
         merchant: d.merchant,
         category: d.category,
         amount: amount,
-        date: new Date(d.created_at).toLocaleDateString([], {month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'}),
-        user: user
+        date: formattedDate,
+        user: user,
+        comment: d.comment,
+        status: d.status
       });
     });
     
     setTotal(sum);
     setMohitTotal(mTotal);
     setAnkitaTotal(aTotal);
+    setMonthPending(pendingList);
     
     const catArray = Object.values(catMap).sort((a, b) => b.total - a.total);
     setGroupedCategories(catArray);
@@ -132,7 +157,7 @@ export default function DashboardScreen() {
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
-        .eq('status', 'approved')
+        .in('status', ['approved', 'pending'])
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString())
         .order('created_at', { ascending: false });
@@ -145,6 +170,17 @@ export default function DashboardScreen() {
         .select('*');
 
       if (budgetError) throw budgetError;
+
+      // 3. Check for pending expenses from previous months
+      const { data: prevPending, error: prevPendingError } = await supabase
+        .from('expenses')
+        .select('id')
+        .eq('status', 'pending')
+        .lt('created_at', start.toISOString())
+        .limit(1);
+
+      if (prevPendingError) throw prevPendingError;
+      setHasPrevPending(prevPending && prevPending.length > 0);
 
       if (data) {
         processExpenseData(data, budgetData);
@@ -173,7 +209,12 @@ export default function DashboardScreen() {
   };
 
   const renderTransaction = ({ item }: { item: Transaction }) => (
-    <TouchableOpacity onPress={() => { setEditingTransaction(item); setSelectedCat(item.category); setSelectedUser(item.user); }}>
+    <TouchableOpacity onPress={() => { 
+      setEditingTransaction(item); 
+      setSelectedCat(item.category); 
+      setSelectedUser(item.user);
+      setCommentText(item.comment || '');
+    }}>
       <View style={styles.transactionRow} lightColor="transparent" darkColor="transparent">
         <View style={styles.transactionLeft}>
           <View style={styles.avatarCircle} lightColor="#e0e0e0" darkColor="#333">
@@ -181,7 +222,11 @@ export default function DashboardScreen() {
           </View>
           <View>
             <Text style={styles.transactionMerchant}>{item.merchant}</Text>
-            <Text style={styles.transactionDate}>{item.date}</Text>
+            {item.comment ? (
+              <Text style={styles.commentText}>"{item.comment}"</Text>
+            ) : (
+              <Text style={styles.transactionDate}>{item.date}</Text>
+            )}
           </View>
         </View>
         <View style={styles.transactionRight}>
@@ -191,6 +236,19 @@ export default function DashboardScreen() {
       </View>
     </TouchableOpacity>
   );
+
+  const handleQuickApprove = async (id: string, category: string) => {
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .update({ status: 'approved', category })
+        .eq('id', id);
+      if (error) throw error;
+      fetchData();
+    } catch (err) {
+      alert('Failed to approve transaction');
+    }
+  };
 
   const handleUpdateTransaction = async () => {
     if (!editingTransaction) return;
@@ -203,7 +261,9 @@ export default function DashboardScreen() {
         .from('expenses')
         .update({ 
           category: selectedCat,
-          user_id: dbUserId 
+          user_id: dbUserId,
+          comment: commentText,
+          status: 'approved' // Automatically approve if edited
         })
         .eq('id', txId);
         
@@ -242,6 +302,15 @@ export default function DashboardScreen() {
         </View>
       </View>
 
+      {hasPrevPending && (
+        <View style={styles.alertBanner} lightColor="#ffeaea" darkColor="#401010">
+          <SymbolView name="exclamationmark.triangle.fill" size={18} tintColor="#ff453a" />
+          <Text style={styles.alertText}>
+            You have unapproved expenses from previous months! Review in Inbox.
+          </Text>
+        </View>
+      )}
+
       <View style={styles.summaryCard} lightColor="#fff" darkColor="#1a1a1a">
         <Text style={styles.cardLabel}>Combined Balance</Text>
         <Text style={styles.totalAmount}>₹{total.toFixed(2)}</Text>
@@ -264,6 +333,50 @@ export default function DashboardScreen() {
           </View>
         </View>
       </View>
+
+      {monthPending.length > 0 && (
+        <View style={styles.pendingSection} lightColor="transparent" darkColor="transparent">
+          <Text style={styles.pendingSectionTitle}>Pending Approval ({currentDate.toLocaleDateString([], {month: 'long'})})</Text>
+          <View style={styles.pendingCardWrapper} lightColor="#fff" darkColor="#1a1a1a">
+            {monthPending.map((item, index) => (
+              <React.Fragment key={item.id}>
+                {index !== 0 && <View style={styles.transactionDivider} lightColor="#eee" darkColor="rgba(255,255,255,0.05)" />}
+                <View style={styles.pendingRow} lightColor="transparent" darkColor="transparent">
+                  <View style={styles.pendingLeft} lightColor="transparent" darkColor="transparent">
+                    <Text style={styles.transactionMerchant}>{item.merchant}</Text>
+                    <Text style={styles.transactionDate}>{item.date} • {item.user}</Text>
+                    {item.comment ? (
+                      <Text style={styles.commentText}>"{item.comment}"</Text>
+                    ) : null}
+                  </View>
+                  <View style={styles.pendingRight} lightColor="transparent" darkColor="transparent">
+                    <Text style={styles.pendingAmount}>₹{item.amount.toFixed(2)}</Text>
+                    <View style={styles.pendingActions} lightColor="transparent" darkColor="transparent">
+                      <TouchableOpacity 
+                        style={styles.pendingApproveBtn}
+                        onPress={() => handleQuickApprove(item.id, item.category)}
+                      >
+                        <SymbolView name="checkmark.circle.fill" size={24} tintColor="#32d74b" />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.pendingEditBtn}
+                        onPress={() => {
+                          setEditingTransaction(item);
+                          setSelectedCat(item.category);
+                          setSelectedUser(item.user);
+                          setCommentText(item.comment || '');
+                        }}
+                      >
+                        <SymbolView name="pencil.circle.fill" size={24} tintColor="#0a84ff" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </React.Fragment>
+            ))}
+          </View>
+        </View>
+      )}
 
       {groupedCategories.map((group) => (
         <View key={group.category} style={styles.listSection} lightColor="transparent" darkColor="transparent">
@@ -360,6 +473,22 @@ export default function DashboardScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Comment Section */}
+            <Text style={{ marginBottom: 10, fontWeight: '600', color: Colors[colorScheme].text }}>Note / Comment:</Text>
+            <TextInput
+              style={[
+                styles.modalCommentInput, 
+                { 
+                  color: Colors[colorScheme].text, 
+                  borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' 
+                }
+              ]}
+              placeholder="Add note/comment (optional)..."
+              placeholderTextColor="#888"
+              value={commentText}
+              onChangeText={setCommentText}
+            />
 
             {/* Save Button */}
             <TouchableOpacity style={styles.modalSaveBtn} onPress={handleUpdateTransaction}>
@@ -628,5 +757,87 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 11,
     fontWeight: '700',
+  },
+  alertBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 69, 58, 0.2)',
+  },
+  alertText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#ff453a',
+    flex: 1,
+  },
+  pendingSection: {
+    marginBottom: 24,
+  },
+  pendingSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ff9f0a',
+    marginBottom: 8,
+  },
+  pendingCardWrapper: {
+    borderRadius: 16,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  pendingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  pendingLeft: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  pendingRight: {
+    alignItems: 'flex-end',
+    backgroundColor: 'transparent',
+    gap: 8,
+  },
+  pendingAmount: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  pendingActions: {
+    flexDirection: 'row',
+    gap: 12,
+    backgroundColor: 'transparent',
+  },
+  pendingApproveBtn: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pendingEditBtn: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  commentText: {
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  modalCommentInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    marginBottom: 20,
+    backgroundColor: 'rgba(150,150,150,0.05)',
   },
 });

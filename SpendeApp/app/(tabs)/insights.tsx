@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SymbolView } from 'expo-symbols';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -15,6 +16,7 @@ type Expense = {
 
 export default function InsightsScreen() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expandedMonths, setExpandedMonths] = useState<Record<string, boolean>>({});
   const colorScheme = useColorScheme() ?? 'dark';
 
   useEffect(() => {
@@ -112,6 +114,69 @@ export default function InsightsScreen() {
   const mohitAllTimePct = (mohitAllTime / (allTimeTotal || 1)) * 100;
   const ankitaAllTimePct = (ankitaAllTime / (allTimeTotal || 1)) * 100;
 
+  // Toggle expanded state for history months
+  const toggleMonth = (monthKey: string) => {
+    setExpandedMonths(prev => ({
+      ...prev,
+      [monthKey]: !prev[monthKey]
+    }));
+  };
+
+  // Group historic expenses by month (excluding current month)
+  const getMonthlyHistory = () => {
+    const historyMap: Record<string, {
+      monthKey: string;
+      monthDisplay: string;
+      total: number;
+      mohitTotal: number;
+      ankitaTotal: number;
+      categories: Record<string, number>;
+    }> = {};
+
+    const currentMonthLabel = `${now.getFullYear()}-${now.getMonth()}`;
+
+    expenses.forEach(e => {
+      const date = e.date;
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const monthKey = `${year}-${month}`;
+
+      // Skip current month
+      if (monthKey === currentMonthLabel) return;
+
+      const monthDisplay = date.toLocaleDateString('default', { month: 'long', year: 'numeric' });
+
+      if (!historyMap[monthKey]) {
+        historyMap[monthKey] = {
+          monthKey,
+          monthDisplay,
+          total: 0,
+          mohitTotal: 0,
+          ankitaTotal: 0,
+          categories: {},
+        };
+      }
+
+      historyMap[monthKey].total += e.amount;
+      if (e.user === 'Mohit') {
+        historyMap[monthKey].mohitTotal += e.amount;
+      } else {
+        historyMap[monthKey].ankitaTotal += e.amount;
+      }
+
+      historyMap[monthKey].categories[e.category] = (historyMap[monthKey].categories[e.category] || 0) + e.amount;
+    });
+
+    return Object.values(historyMap).sort((a, b) => {
+      const [aYear, aMonth] = a.monthKey.split('-').map(Number);
+      const [bYear, bMonth] = b.monthKey.split('-').map(Number);
+      if (aYear !== bYear) return bYear - aYear;
+      return bMonth - aMonth;
+    });
+  };
+
+  const monthlyHistory = getMonthlyHistory();
+
   return (
     <ScrollView style={styles.container}>
       {/* Monthly Trend Header */}
@@ -167,7 +232,7 @@ export default function InsightsScreen() {
       </View>
 
       {/* Cumulative Breakdown (All Time) */}
-      <View style={[styles.section, {marginBottom: 40}]} lightColor="transparent" darkColor="transparent">
+      <View style={[styles.section, {marginBottom: 24}]} lightColor="transparent" darkColor="transparent">
         <Text style={styles.sectionTitle}>Cumulative Breakdown (All Time)</Text>
         <View style={styles.card} lightColor="#fff" darkColor="#1a1a1a">
           
@@ -189,6 +254,60 @@ export default function InsightsScreen() {
           </View>
         </View>
       </View>
+
+      {/* Past Months History */}
+      {monthlyHistory.length > 0 && (
+        <View style={[styles.section, {marginBottom: 60}]} lightColor="transparent" darkColor="transparent">
+          <Text style={styles.sectionTitle}>Past Months History</Text>
+          <View style={styles.historyCard} lightColor="#fff" darkColor="#1a1a1a">
+            {monthlyHistory.map((item, index) => {
+              const isExpanded = !!expandedMonths[item.monthKey];
+              const monthCats = Object.entries(item.categories)
+                .map(([name, amount]) => ({ name, amount, percentage: (amount / (item.total || 1)) * 100 }))
+                .sort((a, b) => b.amount - a.amount);
+              
+              return (
+                <View key={item.monthKey} lightColor="transparent" darkColor="transparent">
+                  {index !== 0 && <View style={styles.historyDivider} />}
+                  <TouchableOpacity onPress={() => toggleMonth(item.monthKey)} style={styles.historyRow}>
+                    <View style={styles.historyRowLeft} lightColor="transparent" darkColor="transparent">
+                      <Text style={styles.historyMonthName}>{item.monthDisplay}</Text>
+                      <Text style={styles.historyMonthSplit}>
+                        M: ₹{item.mohitTotal.toFixed(0)} | A: ₹{item.ankitaTotal.toFixed(0)}
+                      </Text>
+                    </View>
+                    <View style={styles.historyRowRight} lightColor="transparent" darkColor="transparent">
+                      <Text style={styles.historyMonthAmount}>₹{item.total.toFixed(2)}</Text>
+                      <SymbolView 
+                        name={isExpanded ? "chevron.up" : "chevron.down"} 
+                        size={16} 
+                        tintColor="#888" 
+                      />
+                    </View>
+                  </TouchableOpacity>
+
+                  {isExpanded && (
+                    <View style={styles.historyDetails} lightColor="transparent" darkColor="transparent">
+                      <Text style={styles.historyDetailsTitle}>Category Breakdown</Text>
+                      {monthCats.map(cat => (
+                        <View key={cat.name} style={styles.historyCategoryRow} lightColor="transparent" darkColor="transparent">
+                          <View style={styles.historyCategoryInfo} lightColor="transparent" darkColor="transparent">
+                            <Text style={styles.historyCategoryName}>{cat.name}</Text>
+                            <Text style={styles.historyCategoryAmount}>₹{cat.amount.toFixed(2)}</Text>
+                          </View>
+                          <View style={styles.historyBarBackground} lightColor="#f0f0f0" darkColor="#333">
+                            <View style={[styles.historyBarFill, { width: `${cat.percentage}%`, backgroundColor: Colors[colorScheme].tint }]} />
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
 
     </ScrollView>
   );
@@ -304,5 +423,89 @@ const styles = StyleSheet.create({
   ankitaFill: {
     height: '100%',
     backgroundColor: '#0a84ff',
+  },
+  historyCard: {
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    gap: 12,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  historyRowLeft: {
+    backgroundColor: 'transparent',
+  },
+  historyRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    gap: 8,
+  },
+  historyMonthName: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  historyMonthSplit: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 4,
+  },
+  historyMonthAmount: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  historyDivider: {
+    height: 1,
+    backgroundColor: 'rgba(150,150,150,0.1)',
+  },
+  historyDetails: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginTop: 4,
+    backgroundColor: 'rgba(150,150,150,0.03)',
+    gap: 12,
+  },
+  historyDetailsTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#888',
+    marginBottom: 4,
+  },
+  historyCategoryRow: {
+    width: '100%',
+    backgroundColor: 'transparent',
+  },
+  historyCategoryInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+    backgroundColor: 'transparent',
+  },
+  historyCategoryName: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  historyCategoryAmount: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  historyBarBackground: {
+    height: 6,
+    borderRadius: 3,
+    width: '100%',
+    overflow: 'hidden',
+  },
+  historyBarFill: {
+    height: '100%',
+    borderRadius: 3,
   },
 });

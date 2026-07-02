@@ -37,8 +37,10 @@ const INITIAL_PENDING: PendingExpense[] = [
 
 const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Misc'];
 
-function ExpenseCard({ item, onApprove, onDiscard }: { item: PendingExpense, onApprove: (id: string, cat: string) => void, onDiscard: (id: string) => void }) {
+function ExpenseCard({ item, onApprove, onDiscard }: { item: PendingExpense, onApprove: (id: string, cat: string, comment: string) => void, onDiscard: (id: string) => void }) {
   const [selectedCategory, setSelectedCategory] = useState(item.suggestedCategory || 'Misc');
+  const [commentText, setCommentText] = useState('');
+  const colorScheme = useColorScheme() ?? 'dark';
   
   // Make sure the selected category is actually in our list, otherwise default to Misc or add it
   const displayCategories = CATEGORIES.includes(selectedCategory) ? CATEGORIES : [selectedCategory, ...CATEGORIES];
@@ -64,6 +66,14 @@ function ExpenseCard({ item, onApprove, onDiscard }: { item: PendingExpense, onA
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      <TextInput
+        style={[styles.commentInput, { color: Colors[colorScheme].text, borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}
+        placeholder="Add note/comment (optional)..."
+        placeholderTextColor="#888"
+        value={commentText}
+        onChangeText={setCommentText}
+      />
       
       <View style={styles.actions} lightColor="transparent" darkColor="transparent">
         <TouchableOpacity 
@@ -75,7 +85,7 @@ function ExpenseCard({ item, onApprove, onDiscard }: { item: PendingExpense, onA
         
         <TouchableOpacity 
           style={[styles.actionBtn, styles.approveBtn]} 
-          onPress={() => onApprove(item.id, selectedCategory)}>
+          onPress={() => onApprove(item.id, selectedCategory, commentText)}>
           <SymbolView name="checkmark" tintColor="#32d74b" size={20} />
           <Text style={[styles.actionText, { color: '#32d74b' }]}>Approve</Text>
         </TouchableOpacity>
@@ -147,12 +157,20 @@ export default function InboxScreen() {
     }
   };
 
-  const handleApprove = async (id: string, finalCategory: string) => {
+  const handleApprove = async (id: string, finalCategory: string, commentText: string) => {
     // Optimistically update the UI instantly
     setExpenses(prev => prev.filter(e => e.id !== id));
     
     try {
-      const { error } = await supabase.from('expenses').update({ status: 'approved', category: finalCategory }).eq('id', id);
+      const { error } = await supabase
+        .from('expenses')
+        .update({ 
+          status: 'approved', 
+          category: finalCategory,
+          comment: commentText 
+        })
+        .eq('id', id);
+        
       if (error) {
         fetchExpenses();
         alert('Failed to approve transaction: ' + error.message);
@@ -590,5 +608,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 15,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    marginTop: 12,
+    marginBottom: 4,
+    backgroundColor: 'rgba(150,150,150,0.03)',
   },
 });

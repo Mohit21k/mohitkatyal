@@ -12,6 +12,9 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
+  const [selectedCat, setSelectedCat] = useState<string>('');
+  const [selectedUser, setSelectedUser] = useState<'Mohit' | 'Ankita'>('Mohit');
+  const [commentText, setCommentText] = useState('');
   const colorScheme = useColorScheme() ?? 'dark';
 
   useEffect(() => {
@@ -36,19 +39,38 @@ export default function SearchScreen() {
     }
   };
 
-  const handleUpdateCategory = async (cat: string) => {
+  const handleUpdateTransaction = async () => {
     if (!editingTransaction) return;
-    await supabase.from('expenses').update({ category: cat }).eq('id', editingTransaction.id);
+    const dbUserId = selectedUser === 'Mohit' ? 'mohit' : 'ankita';
+    
+    await supabase
+      .from('expenses')
+      .update({ 
+        category: selectedCat,
+        user_id: dbUserId,
+        comment: commentText
+      })
+      .eq('id', editingTransaction.id);
+      
     setEditingTransaction(null);
     searchTransactions(); // Refresh search results
   };
 
   const renderItem = ({ item }: any) => (
-    <TouchableOpacity onPress={() => setEditingTransaction(item)}>
+    <TouchableOpacity onPress={() => {
+      setEditingTransaction(item);
+      setSelectedCat(item.category);
+      setSelectedUser(item.user_id === 'mohit' ? 'Mohit' : 'Ankita');
+      setCommentText(item.comment || '');
+    }}>
       <View style={styles.transactionRow} lightColor="transparent" darkColor="transparent">
         <View lightColor="transparent" darkColor="transparent">
           <Text style={styles.merchant}>{item.merchant}</Text>
-          <Text style={styles.category}>{item.category} • {new Date(item.created_at).toLocaleDateString()}</Text>
+          {item.comment ? (
+            <Text style={styles.commentText}>"{item.comment}"</Text>
+          ) : (
+            <Text style={styles.category}>{item.category} • {new Date(item.created_at).toLocaleDateString()}</Text>
+          )}
         </View>
         <Text style={styles.amount}>₹{Number(item.amount).toFixed(2)}</Text>
       </View>
@@ -90,26 +112,72 @@ export default function SearchScreen() {
         <View style={styles.modalOverlay} lightColor="rgba(0,0,0,0.5)" darkColor="rgba(0,0,0,0.7)">
           <View style={styles.modalContent} lightColor="#fff" darkColor="#1e1e1e">
             <View style={styles.modalHeader} lightColor="transparent" darkColor="transparent">
-              <Text style={styles.modalTitle}>Re-categorize Expense</Text>
+              <Text style={styles.modalTitle}>Edit Expense</Text>
               <TouchableOpacity onPress={() => setEditingTransaction(null)}>
                 <SymbolView name="xmark.circle.fill" size={24} tintColor="#888" />
               </TouchableOpacity>
             </View>
-            <Text style={{marginBottom: 20, color: '#888'}}>
-              Move <Text style={{fontWeight: 'bold', color: Colors[colorScheme].text}}>{editingTransaction?.merchant}</Text> to a new category:
+            
+            <Text style={{ marginBottom: 16, color: '#888' }}>
+              Edit transaction details for <Text style={{ fontWeight: 'bold', color: Colors[colorScheme].text }}>{editingTransaction?.merchant}</Text>:
             </Text>
             
-            <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 10}} lightColor="transparent" darkColor="transparent">
+            {/* Category Section */}
+            <Text style={{ marginBottom: 10, fontWeight: '600', color: Colors[colorScheme].text }}>Category:</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }} lightColor="transparent" darkColor="transparent">
               {CATEGORIES.map(cat => (
                 <TouchableOpacity 
                   key={cat} 
-                  style={[styles.modalCatBtn, editingTransaction?.category === cat && styles.modalCatBtnActive]}
-                  onPress={() => handleUpdateCategory(cat)}
+                  style={[styles.modalCatBtn, selectedCat === cat && styles.modalCatBtnActive]}
+                  onPress={() => setSelectedCat(cat)}
                 >
-                  <Text style={[styles.modalCatText, editingTransaction?.category === cat && styles.modalCatTextActive]}>{cat}</Text>
+                  <Text style={[styles.modalCatText, selectedCat === cat && styles.modalCatTextActive]}>{cat}</Text>
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Spender Section */}
+            <Text style={{ marginBottom: 10, fontWeight: '600', color: Colors[colorScheme].text }}>Spent by:</Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }} lightColor="transparent" darkColor="transparent">
+              {(['Mohit', 'Ankita'] as const).map(user => (
+                <TouchableOpacity
+                  key={user}
+                  style={[
+                    styles.modalUserBtn,
+                    selectedUser === user && styles.modalUserBtnActive
+                  ]}
+                  onPress={() => setSelectedUser(user)}
+                >
+                  <Text style={[
+                    styles.modalUserText,
+                    selectedUser === user && styles.modalUserTextActive
+                  ]}>
+                    {user}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Comment Section */}
+            <Text style={{ marginBottom: 10, fontWeight: '600', color: Colors[colorScheme].text }}>Note / Comment:</Text>
+            <TextInput
+              style={[
+                styles.modalCommentInput, 
+                { 
+                  color: Colors[colorScheme].text, 
+                  borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' 
+                }
+              ]}
+              placeholder="Add note/comment (optional)..."
+              placeholderTextColor="#888"
+              value={commentText}
+              onChangeText={setCommentText}
+            />
+
+            {/* Save Button */}
+            <TouchableOpacity style={styles.modalSaveBtn} onPress={handleUpdateTransaction}>
+              <Text style={styles.modalSaveBtnText}>Save Changes</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -184,5 +252,52 @@ const styles = StyleSheet.create({
   },
   modalCatTextActive: {
     color: '#0a84ff',
+  },
+  modalUserBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: 'rgba(150,150,150,0.1)',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  modalUserBtnActive: {
+    borderColor: '#0a84ff',
+    backgroundColor: 'rgba(10, 132, 255, 0.1)',
+  },
+  modalUserText: {
+    color: '#888',
+    fontWeight: '600',
+  },
+  modalUserTextActive: {
+    color: '#0a84ff',
+  },
+  modalSaveBtn: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#0a84ff',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  modalSaveBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  commentText: {
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  modalCommentInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    marginBottom: 20,
+    backgroundColor: 'rgba(150,150,150,0.05)',
   },
 });
