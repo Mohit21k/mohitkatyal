@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, FlatList, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, FlatList, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Text, View } from '@/components/Themed';
@@ -35,6 +34,8 @@ export default function DashboardScreen() {
   const [mohitTotal, setMohitTotal] = useState(0);
   const [ankitaTotal, setAnkitaTotal] = useState(0);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [collapsedCats, setCollapsedCats] = useState<Record<string, boolean>>({});
+  const [settleModalVisible, setSettleModalVisible] = useState(false);
   
   type GroupedCategory = {
     category: string;
@@ -294,21 +295,21 @@ export default function DashboardScreen() {
         </View>
         
         <View style={styles.monthSelector}>
-          <TouchableOpacity onPress={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
-            <Ionicons name="chevron-back" size={20} color={Colors[colorScheme].text} />
+          <TouchableOpacity onPress={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} style={{ paddingHorizontal: 12 }}>
+            <Text style={{ fontSize: 24, fontWeight: 'bold', color: Colors[colorScheme].text, lineHeight: 28 }}>‹</Text>
           </TouchableOpacity>
           <Text style={styles.subtitle}>
             {currentDate.toLocaleDateString('default', { month: 'long', year: 'numeric' })}
           </Text>
-          <TouchableOpacity onPress={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
-            <Ionicons name="chevron-forward" size={20} color={Colors[colorScheme].text} />
+          <TouchableOpacity onPress={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} style={{ paddingHorizontal: 12 }}>
+            <Text style={{ fontSize: 24, fontWeight: 'bold', color: Colors[colorScheme].text, lineHeight: 28 }}>›</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {hasPrevPending && (
         <View style={styles.alertBanner} lightColor="#fff9e6" darkColor="#2c1e00">
-          <Ionicons name="warning" size={18} color="#ff9500" />
+          <Text style={{ fontSize: 16 }}>⚠️</Text>
           <Text style={styles.alertText}>
             You have unapproved expenses from previous months! Review in Inbox.
           </Text>
@@ -347,6 +348,25 @@ export default function DashboardScreen() {
             <View style={[styles.ankitaRatioFill, { width: `${ankitaPct}%` }]} />
           </View>
         </View>
+
+        {/* Live Settlement calculations */}
+        {Math.abs(mohitTotal - ankitaTotal) > 0 && (
+          <View style={styles.settleContainer} lightColor="transparent" darkColor="transparent">
+            <Text style={styles.settleText} lightColor="#444" darkColor="#ccc">
+              {mohitTotal > ankitaTotal ? 'Ankita owes Mohit' : 'Mohit owes Ankita'}:{' '}
+              <Text style={styles.settleAmount}>₹{(Math.abs(mohitTotal - ankitaTotal) / 2).toFixed(2)}</Text>
+            </Text>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.settleBtn, 
+                { transform: [{ scale: pressed ? 0.95 : 1 }] }
+              ]}
+              onPress={() => setSettleModalVisible(true)}
+            >
+              <Text style={styles.settleBtnText}>Settle Up</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
 
       {monthPending.length > 0 && (
@@ -371,7 +391,7 @@ export default function DashboardScreen() {
                         style={styles.pendingApproveBtn}
                         onPress={() => handleQuickApprove(item.id, item.category)}
                       >
-                        <Ionicons name="checkmark-circle" size={28} color="#32d74b" />
+                        <Text style={styles.pendingApproveBtnText}>Approve</Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={styles.pendingEditBtn}
@@ -382,7 +402,7 @@ export default function DashboardScreen() {
                           setCommentText(item.comment || '');
                         }}
                       >
-                        <Ionicons name="create" size={28} color="#0a84ff" />
+                        <Text style={styles.pendingEditBtnText}>Edit</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -393,46 +413,71 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      {groupedCategories.map((group) => (
-        <View key={group.category} style={styles.listSection} lightColor="transparent" darkColor="transparent">
-          
-          {/* Category Header */}
-          <View style={styles.categoryHeader} lightColor="transparent" darkColor="transparent">
-            <View lightColor="transparent" darkColor="transparent">
-              <Text style={styles.sectionTitle}>{group.category}</Text>
-              <Text style={styles.categorySubTitle}>
-                <Text style={{color: '#ff9f0a'}}>Mohit: ₹{group.mohitTotal.toFixed(2)}</Text>
-                {'  |  '}
-                <Text style={{color: '#0a84ff'}}>Ankita: ₹{group.ankitaTotal.toFixed(2)}</Text>
-              </Text>
-              {budgets[group.category] && (
-                <Text style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
-                  Budget limit: ₹{budgets[group.category].toFixed(2)}
-                </Text>
-              )}
-            </View>
-            <View style={{alignItems: 'flex-end'}} lightColor="transparent" darkColor="transparent">
-              <Text style={[styles.categoryTotal, budgets[group.category] && group.total > budgets[group.category] && { color: '#ff453a' }]}>
-                ₹{group.total.toFixed(2)}
-              </Text>
-              {budgets[group.category] && group.total > budgets[group.category] && (
-                <Text style={{ fontSize: 12, color: '#ff453a', fontWeight: 'bold' }}>OVER BUDGET</Text>
-              )}
-            </View>
-          </View>
+      {groupedCategories.map((group) => {
+        const isCollapsed = !!collapsedCats[group.category];
+        const isOverBudget = budgets[group.category] && group.total > budgets[group.category];
 
-          {/* Transactions List for this Category */}
-          <View style={styles.listWrapper} lightColor="#ffffff" darkColor="#16171d">
-            {group.transactions.map((item, index) => (
-              <React.Fragment key={item.id}>
-                {index !== 0 && <View style={styles.transactionDivider} lightColor="#eee" darkColor="rgba(255,255,255,0.05)" />}
-                {renderTransaction({ item })}
-              </React.Fragment>
-            ))}
-          </View>
+        return (
+          <View key={group.category} style={styles.listSection} lightColor="transparent" darkColor="transparent">
+            
+            {/* Collapsible Category Header with Micro-Press Scale feedback */}
+            <Pressable 
+              style={({ pressed }) => [
+                styles.categoryHeaderContainer,
+                isOverBudget && styles.overBudgetHeaderGlow,
+                { transform: [{ scale: pressed ? 0.98 : 1 }] }
+              ]}
+              onPress={() => setCollapsedCats(prev => ({ ...prev, [group.category]: !prev[group.category] }))}
+            >
+              <View style={styles.categoryHeader} lightColor="transparent" darkColor="transparent">
+                <View lightColor="transparent" darkColor="transparent" style={{ flex: 1 }}>
+                  <Text style={styles.sectionTitle}>
+                    {group.category} {isCollapsed ? '▲' : '▼'}
+                  </Text>
+                  <Text style={styles.categorySubTitle}>
+                    <Text style={{color: '#ff9f0a'}}>Mohit: ₹{group.mohitTotal.toFixed(2)}</Text>
+                    {'  |  '}
+                    <Text style={{color: '#0a84ff'}}>Ankita: ₹{group.ankitaTotal.toFixed(2)}</Text>
+                  </Text>
+                  {budgets[group.category] && (
+                    <Text style={{ fontSize: 12, color: '#8e8e93', marginTop: 4 }}>
+                      Budget limit: ₹{budgets[group.category].toFixed(2)}
+                    </Text>
+                  )}
+                </View>
+                <View style={{alignItems: 'flex-end', backgroundColor: 'transparent'}} lightColor="transparent" darkColor="transparent">
+                  <Text style={[styles.categoryTotal, isOverBudget && { color: '#ff453a' }]}>
+                    ₹{group.total.toFixed(2)}
+                  </Text>
+                  {isOverBudget && (
+                    <Text style={{ fontSize: 12, color: '#ff453a', fontWeight: 'bold', marginTop: 2 }}>OVER BUDGET</Text>
+                  )}
+                </View>
+              </View>
+            </Pressable>
 
-        </View>
-      ))}
+            {/* Collapsible Transactions List for this Category */}
+            {!isCollapsed && (
+              <View 
+                style={[
+                  styles.listWrapper, 
+                  isOverBudget && styles.overBudgetGlow
+                ]} 
+                lightColor="#ffffff" 
+                darkColor="#16171d"
+              >
+                {group.transactions.map((item, index) => (
+                  <React.Fragment key={item.id}>
+                    {index !== 0 && <View style={styles.transactionDivider} lightColor="#eee" darkColor="rgba(255,255,255,0.05)" />}
+                    {renderTransaction({ item })}
+                  </React.Fragment>
+                ))}
+              </View>
+            )}
+
+          </View>
+        );
+      })}
 
       <Modal
         visible={!!editingTransaction}
@@ -444,8 +489,8 @@ export default function DashboardScreen() {
           <View style={styles.modalContent} lightColor="#fff" darkColor="#1e1e1e">
             <View style={styles.modalHeader} lightColor="transparent" darkColor="transparent">
               <Text style={styles.modalTitle}>Edit Expense</Text>
-              <TouchableOpacity onPress={() => setEditingTransaction(null)}>
-                <Ionicons name="close-circle" size={28} color="#888" />
+              <TouchableOpacity onPress={() => setEditingTransaction(null)} style={{ padding: 4 }}>
+                <Text style={{ fontSize: 20, color: '#8e8e93', fontWeight: 'bold' }}>✕</Text>
               </TouchableOpacity>
             </View>
             
@@ -509,6 +554,89 @@ export default function DashboardScreen() {
             <TouchableOpacity style={styles.modalSaveBtn} onPress={handleUpdateTransaction}>
               <Text style={styles.modalSaveBtnText}>Save Changes</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Settle Up Modal */}
+      <Modal
+        visible={settleModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSettleModalVisible(false)}
+      >
+        <View style={styles.modalOverlay} lightColor="rgba(0,0,0,0.5)" darkColor="rgba(0,0,0,0.7)">
+          <View style={styles.modalContent} lightColor="#ffffff" darkColor="#16171d">
+            <View style={styles.modalHeader} lightColor="transparent" darkColor="transparent">
+              <Text style={styles.modalTitle}>Settle Up Balance</Text>
+              <Pressable 
+                onPress={() => setSettleModalVisible(false)} 
+                style={({ pressed }) => [{ padding: 4, transform: [{ scale: pressed ? 0.9 : 1 }] }]}
+              >
+                <Text style={{ fontSize: 20, color: '#8e8e93', fontWeight: 'bold' }}>✕</Text>
+              </Pressable>
+            </View>
+
+            <Text style={{ fontSize: 16, marginBottom: 12, lineHeight: 22, color: Colors[colorScheme].text }}>
+              {mohitTotal > ankitaTotal ? (
+                <Text>
+                  <Text style={{ fontWeight: 'bold', color: '#ff9f0a' }}>Ankita</Text> needs to transfer{' '}
+                  <Text style={{ fontWeight: 'bold', color: '#34c759' }}>₹{((mohitTotal - ankitaTotal) / 2).toFixed(2)}</Text> to{' '}
+                  <Text style={{ fontWeight: 'bold', color: '#ff9f0a' }}>Mohit</Text> to balance the split 50/50.
+                </Text>
+              ) : (
+                <Text>
+                  <Text style={{ fontWeight: 'bold', color: '#0a84ff' }}>Mohit</Text> needs to transfer{' '}
+                  <Text style={{ fontWeight: 'bold', color: '#34c759' }}>₹{((ankitaTotal - mohitTotal) / 2).toFixed(2)}</Text> to{' '}
+                  <Text style={{ fontWeight: 'bold', color: '#0a84ff' }}>Ankita</Text> to balance the split 50/50.
+                </Text>
+              )}
+            </Text>
+
+            <View style={{ padding: 16, borderRadius: 16, backgroundColor: 'rgba(150,150,150,0.06)', marginVertical: 12 }} lightColor="transparent" darkColor="transparent">
+              <Text style={{ fontWeight: '700', fontSize: 14, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5, color: Colors[colorScheme].text }}>Quick Instructions</Text>
+              <Text style={{ fontSize: 13, lineHeight: 18, color: '#8e8e93' }}>
+                1. Open your banking or UPI app (GPay, PhonePe, Paytm).{"\n"}
+                2. Send the exact amount above to the other spender's UPI ID.{"\n"}
+                3. Tap "Confirm Settlement" below to record a balancing entry.
+              </Text>
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.modalSaveBtn,
+                { backgroundColor: '#34c759', transform: [{ scale: pressed ? 0.96 : 1 }] }
+              ]}
+              onPress={async () => {
+                setSettleModalVisible(false);
+                const dbUserId = mohitTotal > ankitaTotal ? 'ankita' : 'mohit';
+                const recipientId = mohitTotal > ankitaTotal ? 'mohit' : 'ankita';
+                const amountDue = Math.abs(mohitTotal - ankitaTotal) / 2;
+                
+                try {
+                  const { error } = await supabase
+                    .from('expenses')
+                    .insert({
+                      amount: amountDue,
+                      merchant: `Settlement: ${dbUserId.toUpperCase()} paid ${recipientId.toUpperCase()}`,
+                      category: 'Misc',
+                      user_id: dbUserId,
+                      status: 'approved',
+                      comment: 'Settlement payment to balance the sheet'
+                    });
+                  if (error) {
+                    alert('Error settling up: ' + error.message);
+                  } else {
+                    alert('Settlement confirmed successfully!');
+                    fetchData();
+                  }
+                } catch (err) {
+                  alert('Error confirming settlement.');
+                }
+              }}
+            >
+              <Text style={styles.modalSaveBtnText}>Confirm Settlement</Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -882,12 +1010,30 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   pendingApproveBtn: {
+    backgroundColor: 'rgba(52, 199, 89, 0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  pendingApproveBtnText: {
+    color: '#34c759',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   pendingEditBtn: {
+    backgroundColor: 'rgba(10, 132, 255, 0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  pendingEditBtnText: {
+    color: '#0a84ff',
+    fontSize: 13,
+    fontWeight: '700',
   },
   commentText: {
     fontSize: 13,
@@ -903,5 +1049,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 20,
     backgroundColor: 'rgba(150,150,150,0.05)',
+  },
+  settleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(150, 150, 150, 0.08)',
+  },
+  settleText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  settleAmount: {
+    fontWeight: '700',
+    color: '#34c759',
+  },
+  settleBtn: {
+    backgroundColor: 'rgba(52, 199, 89, 0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  settleBtnText: {
+    color: '#34c759',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  categoryHeaderContainer: {
+    borderRadius: 24,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  overBudgetHeaderGlow: {
+    backgroundColor: 'rgba(255, 69, 58, 0.05)',
+  },
+  overBudgetGlow: {
+    borderColor: '#ff453a',
+    borderWidth: 1.5,
+    shadowColor: '#ff453a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
 });

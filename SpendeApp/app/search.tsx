@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TextInput, FlatList, TouchableOpacity, Modal } from 'react-native';
+import { StyleSheet, TextInput, FlatList, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
 const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Misc'];
+const SUGGESTIONS = ['Groceries', 'Dining', 'Bills', 'Amazon', 'Uber', 'Netflix'];
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
@@ -80,7 +81,7 @@ export default function SearchScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.searchBarContainer} lightColor="rgba(0,0,0,0.05)" darkColor="rgba(255,255,255,0.1)">
-        <Ionicons name="search" color="#888" size={20} />
+        <Text style={{ fontSize: 16 }}>🔍</Text>
         <TextInput
           style={[styles.searchInput, { color: Colors[colorScheme].text }]}
           placeholder="Search merchants or categories..."
@@ -89,6 +90,22 @@ export default function SearchScreen() {
           onChangeText={setQuery}
           autoFocus
         />
+      </View>
+
+      {/* Quick Search Suggestion Pills */}
+      <View style={styles.suggestionsContainer} lightColor="transparent" darkColor="transparent">
+        {SUGGESTIONS.map(pill => (
+          <Pressable
+            key={pill}
+            style={({ pressed }) => [
+              styles.suggestionPill,
+              { transform: [{ scale: pressed ? 0.94 : 1 }] }
+            ]}
+            onPress={() => setQuery(pill)}
+          >
+            <Text style={styles.suggestionPillText}>{pill}</Text>
+          </Pressable>
+        ))}
       </View>
 
       <FlatList
@@ -113,8 +130,8 @@ export default function SearchScreen() {
           <View style={styles.modalContent} lightColor="#fff" darkColor="#1e1e1e">
             <View style={styles.modalHeader} lightColor="transparent" darkColor="transparent">
               <Text style={styles.modalTitle}>Edit Expense</Text>
-              <TouchableOpacity onPress={() => setEditingTransaction(null)}>
-                <Ionicons name="close-circle" size={28} color="#888" />
+              <TouchableOpacity onPress={() => setEditingTransaction(null)} style={{ padding: 4 }}>
+                <Text style={{ fontSize: 20, color: '#8e8e93', fontWeight: 'bold' }}>✕</Text>
               </TouchableOpacity>
             </View>
             
@@ -327,5 +344,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 20,
     backgroundColor: 'rgba(150,150,150,0.05)',
+  },
+  suggestionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: 'transparent',
+  },
+  suggestionPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: 'rgba(150,150,150,0.08)',
+  },
+  suggestionPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8e8e93',
   },
 });

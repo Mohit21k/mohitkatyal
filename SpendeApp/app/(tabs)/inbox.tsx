@@ -79,15 +79,13 @@ function ExpenseCard({ item, onApprove, onDiscard }: { item: PendingExpense, onA
         <TouchableOpacity 
           style={[styles.actionBtn, styles.discardBtn]} 
           onPress={() => onDiscard(item.id)}>
-          <Ionicons name="close" color="#ff453a" size={20} />
-          <Text style={[styles.actionText, { color: '#ff453a' }]}>Discard</Text>
+          <Text style={[styles.actionText, { color: '#ff453a' }]}>✕ Discard</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={[styles.actionBtn, styles.approveBtn]} 
           onPress={() => onApprove(item.id, selectedCategory, commentText)}>
-          <Ionicons name="checkmark" color="#32d74b" size={20} />
-          <Text style={[styles.actionText, { color: '#32d74b' }]}>Approve</Text>
+          <Text style={[styles.actionText, { color: '#32d74b' }]}>✓ Approve</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -297,14 +295,10 @@ export default function InboxScreen() {
           onPress={() => setIsExpanded(!isExpanded)}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'transparent' }}>
-            <Ionicons name="document-text" size={18} color={Colors[colorScheme].tint} />
+            <Text style={{ fontSize: 18 }}>📝</Text>
             <Text style={styles.smsTitle}>Paste Missed Bank SMS</Text>
           </View>
-          <Ionicons 
-            name={isExpanded ? "chevron-up" : "chevron-down"} 
-            size={16} 
-            color="#888" 
-          />
+          <Text style={{ fontSize: 12, color: '#888', fontWeight: 'bold' }}>{isExpanded ? '▲' : '▼'}</Text>
         </TouchableOpacity>
 
         {isExpanded && (
@@ -357,7 +351,7 @@ export default function InboxScreen() {
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <>
-                  <Ionicons name="sparkles" size={16} color="#fff" />
+                  <Text style={{ fontSize: 16 }}>✨</Text>
                   <Text style={styles.parseBtnText}>AI Parse SMS</Text>
                 </>
               )}
@@ -368,7 +362,7 @@ export default function InboxScreen() {
 
       {displayedExpenses.length === 0 ? (
         <View style={styles.emptyState} lightColor="transparent" darkColor="transparent">
-          <Ionicons name="tray" color={Colors[colorScheme].text} size={48} />
+          <Text style={{ fontSize: 48 }}>📥</Text>
           <Text style={styles.emptyStateText}>No pending expenses for {filterMode}!</Text>
         </View>
       ) : (
@@ -381,7 +375,7 @@ export default function InboxScreen() {
       )}
       
       <TouchableOpacity style={styles.fab} onPress={pickImage}>
-        <Ionicons name="camera" size={24} color="#fff" />
+        <Text style={{ fontSize: 24 }}>📸</Text>
       </TouchableOpacity>
     </View>
   );

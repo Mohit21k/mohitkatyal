@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View } from '@/components/Themed';
@@ -12,6 +12,8 @@ type Expense = {
   category: string;
   user: 'Mohit' | 'Ankita';
   date: Date;
+  merchant: string;
+  comment: string;
 };
 
 export default function InsightsScreen() {
@@ -48,7 +50,9 @@ export default function InsightsScreen() {
           amount: Number(d.amount),
           category: d.category || 'Uncategorized',
           user: d.user_id === 'mohit' ? 'Mohit' : 'Ankita',
-          date: new Date(d.created_at)
+          date: new Date(d.created_at),
+          merchant: d.merchant || 'Unknown Merchant',
+          comment: d.comment || ''
         }));
         setExpenses(formatted as Expense[]);
         
@@ -59,14 +63,77 @@ export default function InsightsScreen() {
       console.warn('Supabase fetch insights failed, loading local cache', err);
       const cached = await AsyncStorage.getItem('cached_insights_expenses');
       if (cached) {
-        // Since dates are stored as JSON strings, we need to map them back to Date objects
         const parsed = JSON.parse(cached).map((e: any) => ({
           ...e,
-          date: new Date(e.date)
+          date: new Date(e.date),
+          merchant: e.merchant || 'Unknown Merchant',
+          comment: e.comment || ''
         }));
         setExpenses(parsed);
       }
     }
+  };
+
+  const handleExportCSV = () => {
+    if (expenses.length === 0) {
+      alert("No data available to export.");
+      return;
+    }
+
+    const sorted = [...expenses].sort((a, b) => b.date.getTime() - a.date.getTime());
+    const headers = ["Date", "Merchant", "Category", "Amount (INR)", "Spender", "Comment"];
+    const rows = sorted.map(e => [
+      e.date.toLocaleDateString(),
+      `"${e.merchant.replace(/"/g, '""')}"`,
+      e.category,
+      e.amount.toFixed(2),
+      e.user,
+      `"${(e.comment || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [headers.join(",")].concat(rows.map(r => r.join(","))).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `SpendeTogether_AllTime_Report.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportMonthCSV = (monthKey: string, monthDisplay: string) => {
+    const monthExpenses = expenses.filter(e => {
+      const year = e.date.getFullYear();
+      const month = e.date.getMonth();
+      return `${year}-${month}` === monthKey;
+    });
+
+    if (monthExpenses.length === 0) {
+      alert("No data available for this month.");
+      return;
+    }
+
+    const sorted = [...monthExpenses].sort((a, b) => b.date.getTime() - a.date.getTime());
+    const headers = ["Date", "Merchant", "Category", "Amount (INR)", "Spender", "Comment"];
+    const rows = sorted.map(e => [
+      e.date.toLocaleDateString(),
+      `"${e.merchant.replace(/"/g, '""')}"`,
+      e.category,
+      e.amount.toFixed(2),
+      e.user,
+      `"${(e.comment || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [headers.join(",")].concat(rows.map(r => r.join(","))).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `SpendeTogether_Report_${monthDisplay.replace(/\s+/g, '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Date helpers
@@ -183,9 +250,18 @@ export default function InsightsScreen() {
       <View style={styles.headerCard} lightColor="#ffffff" darkColor="#16171d">
         <Text style={styles.cardLabel}>This Month's Trend</Text>
         <Text style={styles.totalAmount}>₹{thisMonthTotal.toFixed(2)}</Text>
-        <Text style={[styles.trendText, { color: lastMonthTotal > 0 ? (isUp ? '#ff453a' : '#32d74b') : '#888' }]}>
+        <Text style={[styles.trendText, { color: lastMonthTotal > 0 ? (isUp ? '#ff453a' : '#32d74b') : '#888', marginBottom: 16 }]}>
           {trendText}
         </Text>
+        <Pressable 
+          style={({ pressed }) => [
+            styles.exportBtn,
+            { transform: [{ scale: pressed ? 0.96 : 1 }] }
+          ]}
+          onPress={handleExportCSV}
+        >
+          <Text style={styles.exportBtnText}>📥 Export All Time to CSV</Text>
+        </Pressable>
       </View>
 
       {/* Top Categories */}
@@ -228,6 +304,18 @@ export default function InsightsScreen() {
             <View style={[styles.mohitFill, { width: `${mohitThisMonthPct}%` }]} />
             <View style={[styles.ankitaFill, { width: `${ankitaThisMonthPct}%` }]} />
           </View>
+
+          {/* Live settlement calculations */}
+          {Math.abs(mohitThisMonth - ankitaThisMonth) > 0 && (
+            <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(150,150,150,0.08)', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'transparent' }} lightColor="transparent" darkColor="transparent">
+              <Text style={{ fontSize: 13, fontWeight: '600', color: Colors[colorScheme].text }}>
+                {mohitThisMonth > ankitaThisMonth ? 'Ankita owes Mohit' : 'Mohit owes Ankita'}:{' '}
+                <Text style={{ color: '#34c759', fontWeight: '700' }}>
+                  ₹{(Math.abs(mohitThisMonth - ankitaThisMonth) / 2).toFixed(2)}
+                </Text>
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -277,12 +365,22 @@ export default function InsightsScreen() {
                       </Text>
                     </View>
                     <View style={styles.historyRowRight} lightColor="transparent" darkColor="transparent">
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.inlineExportBtn,
+                          { transform: [{ scale: pressed ? 0.94 : 1 }] }
+                        ]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleExportMonthCSV(item.monthKey, item.monthDisplay);
+                        }}
+                      >
+                        <Text style={styles.inlineExportBtnText}>Export</Text>
+                      </Pressable>
                       <Text style={styles.historyMonthAmount}>₹{item.total.toFixed(2)}</Text>
-                      <Ionicons 
-                        name={isExpanded ? "chevron-up" : "chevron-down"} 
-                        size={16} 
-                        color="#888" 
-                      />
+                      <Text style={{ fontSize: 12, color: '#8e8e93', fontWeight: 'bold', marginLeft: 8 }}>
+                        {isExpanded ? '▲' : '▼'}
+                      </Text>
                     </View>
                   </TouchableOpacity>
 
@@ -522,5 +620,33 @@ const styles = StyleSheet.create({
   historyBarFill: {
     height: '100%',
     borderRadius: 3,
+  },
+  exportBtn: {
+    backgroundColor: '#0a84ff',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  exportBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  inlineExportBtn: {
+    backgroundColor: 'rgba(150, 150, 150, 0.08)',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  inlineExportBtnText: {
+    color: '#0a84ff',
+    fontSize: 11,
+    fontWeight: '700',
   },
 });
