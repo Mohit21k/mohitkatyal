@@ -92,8 +92,144 @@ function ExpenseCard({ item, onApprove, onDiscard }: { item: PendingExpense, onA
   );
 }
 
+function DraftRow({ 
+  draft, 
+  onRetry, 
+  onDiscard, 
+  onSaveManual,
+  colorScheme
+}: { 
+  draft: DraftSMS, 
+  onRetry: (id: string, text: string, spender: 'Mohit' | 'Ankita') => void, 
+  onDiscard: (id: string) => void,
+  onSaveManual: (id: string, text: string, spender: 'Mohit' | 'Ankita', amount: string, merchant: string, category: string) => void,
+  colorScheme: 'dark' | 'light'
+}) {
+  const [manualAmount, setManualAmount] = useState('');
+  const [manualMerchant, setManualMerchant] = useState('');
+  const [manualCategory, setManualCategory] = useState('Misc');
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    const rxAmt = /(?:Rs\.?|INR|Amt:?)\s*([\d,]+(?:\.\d{2})?)/i;
+    const rxMer = /(?:spent\s+at|spent\s+on|paid\s+to|transfer\s+to|vpa\s+to|to)\s+([A-Za-z0-9\s*#&-]+?)(?=\s+on|\s+at|\s+using|\s+via|\s+date|\s+ref|\s+txn|\.|$)/i;
+    
+    const amtMatch = draft.rawText.match(rxAmt);
+    const merMatch = draft.rawText.match(rxMer);
+    
+    if (amtMatch) setManualAmount(amtMatch[1].replace(/,/g, ''));
+    if (merMatch) setManualMerchant(merMatch[1].trim());
+  }, [draft.rawText]);
+
+  return (
+    <View style={styles.draftCard} lightColor="#ffffff" darkColor="#16171d">
+      <Text style={styles.draftMeta}>
+        Spender: {draft.spender} • Received: {draft.timestamp}
+      </Text>
+      <Text style={styles.draftRawText} lightColor="#666" darkColor="#ccc">
+        "{draft.rawText}"
+      </Text>
+
+      {isEditing ? (
+        <View style={styles.draftEditForm} lightColor="transparent" darkColor="transparent">
+          <View style={{ flexDirection: 'row', gap: 10, marginVertical: 8 }} lightColor="transparent" darkColor="transparent">
+            <View style={{ flex: 1 }} lightColor="transparent" darkColor="transparent">
+              <Text style={styles.draftFormLabel}>Amount (₹):</Text>
+              <TextInput
+                style={[styles.draftInput, { color: Colors[colorScheme].text }]}
+                keyboardType="numeric"
+                value={manualAmount}
+                onChangeText={setManualAmount}
+                placeholder="0.00"
+                placeholderTextColor="#8e8e93"
+              />
+            </View>
+            <View style={{ flex: 2 }} lightColor="transparent" darkColor="transparent">
+              <Text style={styles.draftFormLabel}>Merchant:</Text>
+              <TextInput
+                style={[styles.draftInput, { color: Colors[colorScheme].text }]}
+                value={manualMerchant}
+                onChangeText={setManualMerchant}
+                placeholder="Merchant Name"
+                placeholderTextColor="#8e8e93"
+              />
+            </View>
+          </View>
+
+          <View style={{ marginBottom: 12 }} lightColor="transparent" darkColor="transparent">
+            <Text style={styles.draftFormLabel}>Category:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
+              {CATEGORIES.map(cat => (
+                <TouchableOpacity
+                  key={cat}
+                  onPress={() => setManualCategory(cat)}
+                  style={[
+                    styles.draftCatPill,
+                    manualCategory === cat && styles.draftCatPillActive
+                  ]}
+                >
+                  <Text style={[
+                    styles.draftCatText,
+                    manualCategory === cat && styles.draftCatTextActive
+                  ]}>{cat}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 10 }} lightColor="transparent" darkColor="transparent">
+            <TouchableOpacity 
+              style={[styles.draftActionBtn, styles.draftCancelBtn]}
+              onPress={() => setIsEditing(false)}
+            >
+              <Text style={{ color: '#8e8e93', fontWeight: '700', fontSize: 13 }}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.draftActionBtn, styles.draftSaveBtn]}
+              onPress={() => onSaveManual(draft.id, draft.rawText, draft.spender, manualAmount, manualMerchant, manualCategory)}
+            >
+              <Text style={{ color: '#34c759', fontWeight: '700', fontSize: 13 }}>✓ Save Entry</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.draftActions} lightColor="transparent" darkColor="transparent">
+          <TouchableOpacity 
+            style={[styles.draftBtn, styles.draftDiscardBtn]} 
+            onPress={() => onDiscard(draft.id)}
+          >
+            <Text style={styles.draftBtnTextRed}>✕ Discard</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.draftBtn, styles.draftManualBtn]} 
+            onPress={() => setIsEditing(true)}
+          >
+            <Text style={styles.draftBtnTextBlue}>✏️ Manual</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.draftBtn, styles.draftRetryBtn]} 
+            onPress={() => onRetry(draft.id, draft.rawText, draft.spender)}
+          >
+            <Text style={styles.draftBtnTextGreen}>🔄 Retry AI</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
+type DraftSMS = {
+  id: string;
+  rawText: string;
+  spender: 'Mohit' | 'Ankita';
+  timestamp: string;
+};
+
 export default function InboxScreen() {
   const [expenses, setExpenses] = useState<PendingExpense[]>([]);
+  const [drafts, setDrafts] = useState<DraftSMS[]>([]);
   const [filterMode, setFilterMode] = useState<'All' | 'Mohit' | 'Ankita'>('All');
   const [isExpanded, setIsExpanded] = useState(false);
   const [smsText, setSmsText] = useState('');
@@ -109,6 +245,7 @@ export default function InboxScreen() {
 
   useEffect(() => {
     fetchExpenses();
+    loadDrafts();
     
     const subscription = supabase
       .channel('expenses_channel')
@@ -121,6 +258,17 @@ export default function InboxScreen() {
       subscription.unsubscribe();
     };
   }, []);
+
+  const loadDrafts = async () => {
+    try {
+      const existing = await AsyncStorage.getItem('failed_sms_drafts');
+      if (existing) {
+        setDrafts(JSON.parse(existing));
+      }
+    } catch (e) {
+      console.warn('Failed to load drafts', e);
+    }
+  };
 
   const fetchExpenses = async () => {
     try {
@@ -195,12 +343,71 @@ export default function InboxScreen() {
     }
   };
 
-  const handleParseSMS = async () => {
-    if (!smsText.trim()) {
-      alert('Please paste the SMS content first.');
+  const saveToDrafts = async (rawText: string, spender: 'Mohit' | 'Ankita') => {
+    try {
+      const newDraft: DraftSMS = {
+        id: Math.random().toString(),
+        rawText,
+        spender,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      const updated = [newDraft, ...drafts];
+      setDrafts(updated);
+      await AsyncStorage.setItem('failed_sms_drafts', JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Failed to save draft', e);
+    }
+  };
+
+  const handleDiscardDraft = async (draftId: string) => {
+    const updated = drafts.filter(d => d.id !== draftId);
+    setDrafts(updated);
+    await AsyncStorage.setItem('failed_sms_drafts', JSON.stringify(updated));
+  };
+
+  const handleSaveDraftManually = async (
+    draftId: string, 
+    rawText: string, 
+    spender: 'Mohit' | 'Ankita', 
+    amountStr: string, 
+    merchantStr: string, 
+    categoryStr: string
+  ) => {
+    const amount = Number(amountStr);
+    if (isNaN(amount) || amount <= 0) {
+      alert("Please enter a valid amount.");
       return;
     }
-    
+    const merchant = merchantStr.trim() || 'Manual Entry';
+    const category = categoryStr || 'Misc';
+    const dbUserId = spender.toLowerCase();
+
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .insert({
+          amount,
+          merchant,
+          category,
+          status: 'pending',
+          user_id: dbUserId,
+          raw_sms: rawText,
+          comment: 'Saved manually from offline draft'
+        });
+
+      if (error) {
+        alert("Failed to save manually: " + error.message);
+      } else {
+        alert("Transaction added to pending queue!");
+        handleDiscardDraft(draftId);
+        fetchExpenses();
+      }
+    } catch (err) {
+      alert("Failed connection. Draft preserved.");
+    }
+  };
+
+  const handleRetryAIDraft = async (draftId: string, rawText: string, spender: 'Mohit' | 'Ankita') => {
     setIsParsing(true);
     try {
       const response = await fetch('https://okroglemueonxiuftkut.supabase.co/functions/v1/process-sms', {
@@ -211,8 +418,66 @@ export default function InboxScreen() {
           'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ''
         },
         body: JSON.stringify({ 
-          smsBody: smsText.trim(), 
-          userId: smsSpender.toLowerCase() 
+          smsBody: rawText, 
+          userId: spender.toLowerCase() 
+        })
+      });
+      
+      if (response.ok) {
+        alert('Retry successful! AI parsed and added to pending.');
+        handleDiscardDraft(draftId);
+        fetchExpenses();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        alert('AI parse failed again: ' + (errorData.error || 'Check your OpenAI API key settings.'));
+      }
+    } catch (err) {
+      alert('Network error. Unable to connect to parser.');
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  const parseSMSRegex = (text: string) => {
+    const amountRegex = /(?:Rs\.?|INR|Amt:?)\s*([\d,]+(?:\.\d{2})?)/i;
+    const merchantRegex = /(?:spent\s+at|spent\s+on|paid\s+to|transfer\s+to|vpa\s+to|to)\s+([A-Za-z0-9\s*#&-]+?)(?=\s+on|\s+at|\s+using|\s+via|\s+date|\s+ref|\s+txn|\.|$)/i;
+
+    const amtMatch = text.match(amountRegex);
+    const merchantMatch = text.match(merchantRegex);
+
+    let amount = 0;
+    if (amtMatch) {
+      amount = Number(amtMatch[1].replace(/,/g, ''));
+    }
+    let merchant = 'Unknown Merchant';
+    if (merchantMatch) {
+      merchant = merchantMatch[1].trim();
+    }
+
+    return { amount, merchant };
+  };
+
+  const handleParseSMS = async () => {
+    if (!smsText.trim()) {
+      alert('Please paste the SMS content first.');
+      return;
+    }
+    
+    setIsParsing(true);
+    const pastedText = smsText.trim();
+    const spender = smsSpender;
+
+    try {
+      const response = await fetch('https://okroglemueonxiuftkut.supabase.co/functions/v1/process-sms', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+          'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ''
+        },
+        body: JSON.stringify({ 
+          smsBody: pastedText, 
+          userId: spender.toLowerCase() 
         })
       });
       
@@ -222,11 +487,67 @@ export default function InboxScreen() {
         setIsExpanded(false);
         fetchExpenses();
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        alert('Failed to parse: ' + (errorData.error || 'Make sure the edge function is deployed.'));
+        const backupResult = parseSMSRegex(pastedText);
+        if (backupResult.amount > 0) {
+          try {
+            const { error: insertErr } = await supabase
+              .from('expenses')
+              .insert({
+                amount: backupResult.amount,
+                merchant: backupResult.merchant,
+                category: 'Misc',
+                status: 'pending',
+                user_id: spender.toLowerCase(),
+                raw_sms: pastedText,
+                comment: 'Parsed offline via backup regex'
+              });
+            if (!insertErr) {
+              alert(`AI service offline. Used backup parser: Extracted ₹${backupResult.amount.toFixed(2)} from "${backupResult.merchant}". Added to pending!`);
+              setSmsText('');
+              setIsExpanded(false);
+              fetchExpenses();
+              return;
+            }
+          } catch (dbErr) {}
+        }
+
+        alert('AI Parsing failed. Added message to local Offline Drafts queue.');
+        saveToDrafts(pastedText, spender);
+        setSmsText('');
+        setIsExpanded(false);
       }
     } catch (err) {
-      alert('Error connecting to parser.');
+      const backupResult = parseSMSRegex(pastedText);
+      let regexSaved = false;
+      if (backupResult.amount > 0) {
+        try {
+          const { error: insertErr } = await supabase
+            .from('expenses')
+            .insert({
+              amount: backupResult.amount,
+              merchant: backupResult.merchant,
+              category: 'Misc',
+              status: 'pending',
+              user_id: spender.toLowerCase(),
+              raw_sms: pastedText,
+              comment: 'Parsed offline via backup regex'
+            });
+          if (!insertErr) {
+            alert(`Offline. Used backup parser: Extracted ₹${backupResult.amount.toFixed(2)} from "${backupResult.merchant}". Added to pending!`);
+            setSmsText('');
+            setIsExpanded(false);
+            fetchExpenses();
+            regexSaved = true;
+          }
+        } catch (dbErr) {}
+      }
+
+      if (!regexSaved) {
+        alert('Network offline. Saved message to local Offline Drafts.');
+        saveToDrafts(pastedText, spender);
+        setSmsText('');
+        setIsExpanded(false);
+      }
     } finally {
       setIsParsing(false);
     }
@@ -359,6 +680,23 @@ export default function InboxScreen() {
           </View>
         )}
       </View>
+
+      {/* Offline Drafts & Retries Queue */}
+      {drafts.length > 0 && (
+        <ScrollView style={styles.draftsContainer} lightColor="transparent" darkColor="transparent">
+          <Text style={styles.draftsTitle}>⚠️ Offline Drafts & Failed Retries ({drafts.length})</Text>
+          {drafts.map((draft) => (
+            <DraftRow 
+              key={draft.id} 
+              draft={draft} 
+              onRetry={handleRetryAIDraft} 
+              onDiscard={handleDiscardDraft} 
+              onSaveManual={handleSaveDraftManually}
+              colorScheme={colorScheme}
+            />
+          ))}
+        </ScrollView>
+      )}
 
       {displayedExpenses.length === 0 ? (
         <View style={styles.emptyState} lightColor="transparent" darkColor="transparent">
@@ -625,5 +963,138 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 4,
     backgroundColor: 'rgba(150,150,150,0.05)',
+  },
+  draftsContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    maxHeight: 280,
+    backgroundColor: 'transparent',
+  },
+  draftsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#ff9500',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  draftCard: {
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 149, 0, 0.15)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  draftMeta: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ff9500',
+    marginBottom: 6,
+  },
+  draftRawText: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontStyle: 'italic',
+    marginBottom: 12,
+  },
+  draftActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+    backgroundColor: 'transparent',
+  },
+  draftBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  draftDiscardBtn: {
+    backgroundColor: 'rgba(255, 59, 48, 0.08)',
+    borderColor: 'transparent',
+  },
+  draftManualBtn: {
+    backgroundColor: 'rgba(10, 132, 255, 0.08)',
+    borderColor: 'transparent',
+  },
+  draftRetryBtn: {
+    backgroundColor: 'rgba(52, 199, 89, 0.08)',
+    borderColor: 'transparent',
+  },
+  draftBtnTextRed: {
+    color: '#ff3b30',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  draftBtnTextBlue: {
+    color: '#0a84ff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  draftBtnTextGreen: {
+    color: '#34c759',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  draftEditForm: {
+    marginTop: 6,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(150, 150, 150, 0.08)',
+    backgroundColor: 'transparent',
+  },
+  draftFormLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8e8e93',
+    marginBottom: 4,
+  },
+  draftInput: {
+    backgroundColor: 'rgba(150, 150, 150, 0.05)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 13,
+    fontWeight: '600',
+    borderWidth: 1,
+    borderColor: 'rgba(150, 150, 150, 0.08)',
+  },
+  draftCatPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(150, 150, 150, 0.06)',
+    marginRight: 6,
+  },
+  draftCatPillActive: {
+    backgroundColor: 'rgba(10, 132, 255, 0.1)',
+  },
+  draftCatText: {
+    color: '#8e8e93',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  draftCatTextActive: {
+    color: '#0a84ff',
+  },
+  draftActionBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  draftCancelBtn: {
+    backgroundColor: 'rgba(150, 150, 150, 0.08)',
+  },
+  draftSaveBtn: {
+    backgroundColor: 'rgba(52, 199, 89, 0.12)',
   },
 });
