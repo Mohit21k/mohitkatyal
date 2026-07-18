@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
-const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Misc'];
+const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Medical', 'Misc'];
 const SUGGESTIONS = ['Groceries', 'Dining', 'Bills', 'Amazon', 'Uber', 'Netflix'];
 
 export default function SearchScreen() {
