@@ -19,7 +19,7 @@ type Transaction = {
   status?: 'pending' | 'approved' | 'discarded';
 };
 
-const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Medical', 'Misc'];
+const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Medical', 'Recurring Expense', 'Misc'];
 
 const RECENT_TRANSACTIONS: Transaction[] = [
   { id: '1', merchant: 'Whole Foods', category: 'Groceries', amount: 125.60, date: 'May 28', user: 'Mohit' },

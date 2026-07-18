@@ -7,7 +7,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useRouter } from 'expo-router';
 
-const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Medical', 'Misc'];
+const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Medical', 'Recurring Expense', 'Misc'];
 const SUGGESTIONS = ['Groceries', 'Dining', 'Bills', 'Amazon', 'Uber', 'Netflix'];
 
 export default function SearchScreen() {

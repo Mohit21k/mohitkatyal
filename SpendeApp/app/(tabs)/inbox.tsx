@@ -35,7 +35,7 @@ const INITIAL_PENDING: PendingExpense[] = [
   },
 ];
 
-const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Medical', 'Misc'];
+const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Medical', 'Recurring Expense', 'Misc'];
 
 function ExpenseCard({ item, onApprove, onDiscard }: { item: PendingExpense, onApprove: (id: string, cat: string, comment: string) => void, onDiscard: (id: string) => void }) {
   const [selectedCategory, setSelectedCategory] = useState(item.suggestedCategory || 'Misc');

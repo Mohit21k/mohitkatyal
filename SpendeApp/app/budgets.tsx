@@ -7,7 +7,7 @@ import Colors from '@/constants/Colors';
 import { checkAndLogRecurringExpenses } from '@/lib/recurring';
 import { useRouter } from 'expo-router';
 
-const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Medical', 'Misc'];
+const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Medical', 'Recurring Expense', 'Misc'];
 
 type BudgetRow = {
   category: string;
