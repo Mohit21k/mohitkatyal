@@ -6,6 +6,7 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { supabase } from '@/lib/supabase';
+import { checkAndLogRecurringExpenses } from '@/lib/recurring';
 
 type Transaction = {
   id: string;
@@ -151,6 +152,7 @@ export default function DashboardScreen() {
   };
 
   const fetchData = async () => {
+    await checkAndLogRecurringExpenses();
     const { start, end } = getMonthBounds(currentDate);
 
     try {
