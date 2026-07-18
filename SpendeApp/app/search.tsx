@@ -5,11 +5,13 @@ import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { useRouter } from 'expo-router';
 
 const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Medical', 'Misc'];
 const SUGGESTIONS = ['Groceries', 'Dining', 'Bills', 'Amazon', 'Uber', 'Netflix'];
 
 export default function SearchScreen() {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
@@ -80,6 +82,21 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Premium Back Navigation Header */}
+      <View style={styles.backHeader} lightColor="#ffffff" darkColor="#16171d">
+        <Pressable 
+          onPress={() => router.back()} 
+          style={({ pressed }) => [
+            styles.backBtn,
+            { transform: [{ scale: pressed ? 0.94 : 1 }] }
+          ]}
+        >
+          <Text style={styles.backArrow}>‹</Text>
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+        <Text style={styles.headerTitle}>Search</Text>
+        <View style={{ width: 60 }} lightColor="transparent" darkColor="transparent" />
+      </View>
       <View style={styles.searchBarContainer} lightColor="rgba(0,0,0,0.05)" darkColor="rgba(255,255,255,0.1)">
         <Text style={{ fontSize: 16 }}>🔍</Text>
         <TextInput
@@ -363,5 +380,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#8e8e93',
+  },
+  backHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1.5,
+    borderColor: 'rgba(150,150,150,0.08)',
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    width: 60,
+    backgroundColor: 'transparent',
+  },
+  backArrow: {
+    fontSize: 28,
+    fontWeight: '300',
+    color: '#0a84ff',
+    marginTop: -4,
+  },
+  backText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#0a84ff',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

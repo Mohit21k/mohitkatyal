@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { checkAndLogRecurringExpenses } from '@/lib/recurring';
+import { useRouter } from 'expo-router';
 
 const CATEGORIES = ['Groceries', 'Dining', 'Bills', 'Transport', 'Shopping', 'Leisure', 'Medical', 'Misc'];
 
@@ -25,6 +26,7 @@ type RecurringItem = {
 };
 
 export default function BudgetsScreen() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'budgets' | 'recurring'>('budgets');
   
@@ -220,6 +222,22 @@ export default function BudgetsScreen() {
 
   return (
     <View style={styles.outerContainer} lightColor="#f8f9fa" darkColor="#0c0d12">
+      {/* Premium Back Navigation Header */}
+      <View style={styles.backHeader} lightColor="#ffffff" darkColor="#16171d">
+        <Pressable 
+          onPress={() => router.back()} 
+          style={({ pressed }) => [
+            styles.backBtn,
+            { transform: [{ scale: pressed ? 0.94 : 1 }] }
+          ]}
+        >
+          <Text style={styles.backArrow}>‹</Text>
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+        <Text style={styles.headerTitle}>Set Budgets</Text>
+        <View style={{ width: 60 }} lightColor="transparent" darkColor="transparent" />
+      </View>
+
       {/* Top Segment Controller */}
       <View style={styles.segmentContainer} lightColor="#ffffff" darkColor="#16171d">
         <Pressable 
@@ -872,5 +890,38 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 15,
+  },
+  backHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1.5,
+    borderColor: 'rgba(150,150,150,0.08)',
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    width: 60,
+    backgroundColor: 'transparent',
+  },
+  backArrow: {
+    fontSize: 28,
+    fontWeight: '300',
+    color: '#0a84ff',
+    marginTop: -4,
+  },
+  backText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#0a84ff',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });
